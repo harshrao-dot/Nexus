@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
+const fileRoutes = require("./routes/fileRoutes");
 
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/rooms", roomRoutes);
+app.use("/files", fileRoutes);
 
 mongoose
   .connect(process.env.MONGO_URL)
