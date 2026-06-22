@@ -4,6 +4,7 @@ import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import RoomPage from "./pages/roompage";  
 
 
 function App() {
@@ -27,13 +28,18 @@ function App() {
           </PublicRoute>
         }
       />  
-      <Route
-        path="/dashboard"
-        element={
+      <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         }
+      />
+
+      <Route path="/room/:roomId" element={
+          <ProtectedRoute>
+              <RoomPage />
+          </ProtectedRoute>
+        } 
       />
     </Routes>
     </>

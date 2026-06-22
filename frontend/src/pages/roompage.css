@@ -1,0 +1,48 @@
+.room-page{
+    height: 100vh;
+    display: flex;
+}
+
+.file-explorer{
+    width: 250px;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.editor-section{
+    flex: 1;
+    padding: 10px;
+}
+
+.file-item{
+    padding: 8px;
+    cursor: pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px;
+}
+
+.file-item:hover{
+    background-color: #2a2a2a;
+}
+
+.file-item.active{
+    background-color: #3a3a3a;
+}
+
+.file-item span{
+    cursor:pointer;
+}
+
+.files-section{
+    flex: 1;
+}
+
+.members-section{
+    margin-top: auto;
+    border-top: 1px solid #444;
+    padding: 10px;
+}
