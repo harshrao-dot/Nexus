@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
+import Editor from "@monaco-editor/react";
 import "./roompage.css";
 
 
@@ -13,12 +14,39 @@ function RoomPage() {
     const [showCreateFile, setShowCreateFile] = useState(false);
     const [fileName, setFileName] = useState("");
     const [language, setLanguage] = useState("javascript");
+    const [isResizing, setIsResizing] = useState(false);
+    const [code, setCode] = useState("");
     const { roomId } = useParams();
 
 
     useEffect(() => {
         fetchFiles();
     }, [roomId]);
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isResizing) return;
+
+            const newWidth = Math.min(
+                Math.max(e.clientX, 200),
+                500
+            );
+
+            setSidebarWidth(newWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isResizing]);
 
     const fetchFiles = async () => {
         try {
@@ -108,6 +136,41 @@ function RoomPage() {
         }
     };
 
+    const saveFile = async () => {
+        if (!selectedFile) return;
+
+        try {
+            await api.put(
+                `/files/content/${selectedFile._id}`,
+                {
+                    content: code,
+                }
+            );
+
+            setSelectedFile({
+                ...selectedFile,
+                content: code,
+            });
+
+            fetchFiles();
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    const openFile = async (fileId) => {
+        try {
+            const res = await api.get(
+                `/files/single/${fileId}`
+            );
+
+            setSelectedFile(res.data.file);
+            setCode(res.data.file.content);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     return (
         <div className="room-page">
     
@@ -158,7 +221,9 @@ function RoomPage() {
                                 : "file-item"
                         }
                     >
-                        <span onClick={() => setSelectedFile(file)}>
+                        <span
+                            onClick={() => openFile(file._id)}
+                        >
                             {file.name}
                         </span>
 
@@ -180,13 +245,31 @@ function RoomPage() {
                 </div>
             </div>)}
 
+            {showExplorer && (
+                <div
+                    className="resize-handle"
+                    onMouseDown={() => setIsResizing(true)}
+                />
+            )}
+            
+
            <div className="editor-section">
                 <button onClick={() => setShowExplorer(!showExplorer)}>
                     {showExplorer ? "←" : "→"}
                 </button>
 
                 {selectedFile ? (
-                    <h2>{selectedFile.name}</h2>
+                    <>
+                        <button onClick={saveFile}>
+                            Save
+                        </button>
+                        <Editor
+                            height="90vh"
+                            language={selectedFile.language}
+                            value={code}
+                            onChange={(value) => setCode(value || "")}
+                        />
+                    </>
                 ) : (
                     <h2>Select a file</h2>
                 )}

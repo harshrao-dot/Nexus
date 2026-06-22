@@ -120,4 +120,54 @@ const deleteFile = async (req, res) => {
     }
 };
 
-module.exports = {createFile, getFiles, renameFile, deleteFile};
+const updateFileContent = async (req, res) => {
+    try {
+        const { fileId } = req.params;
+        const { content } = req.body;
+
+        const file = await File.findById(fileId);
+
+        if (!file) {
+            return res.status(404).json({
+                message: "File not found",
+            });
+        }
+
+        file.content = content;
+
+        await file.save();
+
+        res.status(200).json({
+            message: "File content updated",
+            file,
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
+
+const getSingleFile = async (req, res) => {
+    try {
+        const { fileId } = req.params;
+
+        const file = await File.findById(fileId);
+
+        if (!file) {
+            return res.status(404).json({
+                message: "File not found",
+            });
+        }
+
+        res.status(200).json({
+            file,
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+        });
+    }
+};
+
+module.exports = {createFile, getFiles, renameFile, deleteFile, updateFileContent, getSingleFile};

@@ -46,3 +46,9 @@
     border-top: 1px solid #444;
     padding: 10px;
 }
+
+.resize-handle{
+    width: 5px;
+    cursor: col-resize;
+    background: #333;
+}
