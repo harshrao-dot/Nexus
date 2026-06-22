@@ -110,6 +110,21 @@ const joinRoom = async(req, res) => {
             message: "Internal Server Error"
         });
     }
-}
+};
 
-module.exports = {createRoom, joinRoom};
+const getMyRooms = async(req, res) => {
+    try{
+        const rooms = await Room.find({members : req.userId}).populate("owner", "username");
+        return res.status(200).json({
+            success : true,
+            rooms
+        })
+    }catch(err){
+        return res.status(500).json({
+            success : false,
+            message : err.message
+        });
+    }
+};
+
+module.exports = {createRoom, joinRoom, getMyRooms};

@@ -1,0 +1,14 @@
+nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 20px 40px;
+}
+nav h2{
+    margin: 0;
+}
+
+nav button{
+    cursor: pointer;
+}

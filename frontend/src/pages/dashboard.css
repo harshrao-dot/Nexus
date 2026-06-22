@@ -1,0 +1,39 @@
+.actions{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin:40px 0;
+}
+
+.action-card{
+    width:250px;
+    height:120px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    border:1px solid #ccc;
+    border-radius:12px;
+
+    cursor:pointer;
+}
+
+.rooms-section{
+    padding: 20px 40px;
+}
+
+.rooms-container{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.room-card{
+    width: 250px;
+
+    border: 1px solid #ccc;
+    border-radius: 12px;
+
+    padding: 16px;
+}

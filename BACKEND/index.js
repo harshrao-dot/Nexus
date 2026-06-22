@@ -25,7 +25,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/files", fileRoutes);
 
