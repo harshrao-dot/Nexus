@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
 });
 
 const roomUsers = {};
-
+const fileStates = {};
 io.on("connection", (socket) => {
 
   socket.on("join-room", ({ roomId, username }) => {
@@ -85,8 +85,22 @@ io.on("connection", (socket) => {
     socket.leave(roomId);
   });
 
-  socket.on("code-change", ({ roomId, code }) => {
-    socket.to(roomId).emit("code-update", code);
+  socket.on("code-change", ({ roomId, fileId, code }) => {
+
+    fileStates[fileId] = code;
+
+    socket.to(roomId).emit("code-update", {
+        fileId,
+        code
+    });
+
+  });
+
+  socket.on("get-file-state", (fileId, callback) => {
+    callback(
+        fileStates[fileId] || null
+    );
+
   });
 
   socket.on("disconnect", () => {

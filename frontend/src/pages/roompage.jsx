@@ -74,14 +74,23 @@ function RoomPage() {
     }, [roomId, user]);
 
     useEffect(() => {
-        socket.on("code-update", (code) => {
-            setCode(code);
-        });
-        
-        return () => {
-            socket.off("code-update");
+        const handleCodeUpdate = ({ fileId, code }) => {
+
+            if (
+                selectedFile &&
+                selectedFile._id === fileId
+            ) {
+                setCode(code);
+            }
+
         };
-    }, []);
+
+        socket.on("code-update", handleCodeUpdate);
+
+        return () => {
+            socket.off("code-update", handleCodeUpdate);
+        };
+    }, [selectedFile]);
 
     const fetchFiles = async () => {
         try {
@@ -201,6 +210,18 @@ function RoomPage() {
 
             setSelectedFile(res.data.file);
             setCode(res.data.file.content);
+
+            socket.emit(
+                "get-file-state",
+                fileId,
+                (latestCode) => {
+
+                    if (latestCode !== null) {
+                        setCode(latestCode);
+                    }
+
+                }
+            );
         } catch (err) {
             console.error(err);
         }
@@ -213,6 +234,7 @@ function RoomPage() {
 
         socket.emit("code-change", {
             roomId,
+            fileId: selectedFile._id,
             code: newCode
         });
     };
