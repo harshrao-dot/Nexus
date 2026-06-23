@@ -31,7 +31,7 @@ const roomSchema = new Schema(
 
         selectedQuestion : {
             type : Schema.Types.ObjectId,
-            ref : "Questions",
+            ref : "Question",
             default : null
         },
 

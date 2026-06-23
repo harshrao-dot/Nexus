@@ -1,5 +1,6 @@
 const Room = require("../models/room");
 const bcrypt = require("bcryptjs");
+const Question = require("../models/question");
 
 function generateRoomCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -127,4 +128,73 @@ const getMyRooms = async(req, res) => {
     }
 };
 
-module.exports = {createRoom, joinRoom, getMyRooms};
+const selectQuestion = async (req, res) => {
+    try {
+        const { roomId, questionId } = req.body;
+
+        const room = await Room.findById(roomId);
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found",
+            });
+        }
+
+        if (room.owner.toString() !== req.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Only owner can select question",
+            });
+        }
+
+        const question = await Question.findById(questionId);
+
+        if (!question) {
+            return res.status(404).json({
+                success: false,
+                message: "Question not found",
+            });
+        }
+
+        room.selectedQuestion = questionId;
+        await room.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Question selected successfully",
+            room,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+};
+
+const getRoomQuestion = async (req, res) => {
+    try {
+        const room = await Room.findById(req.params.roomId)
+            .populate("selectedQuestion");
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            question: room.selectedQuestion,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+};
+
+module.exports = {createRoom, joinRoom, getMyRooms, selectQuestion, getRoomQuestion,};

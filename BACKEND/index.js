@@ -9,6 +9,7 @@ const { Server } = require("socket.io");
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const fileRoutes = require("./routes/fileRoutes");
+const questionRoutes = require("./routes/questionRoutes");
 
 const app = express();
 const PORT = 5000;
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/files", fileRoutes);
+app.use("/questions", questionRoutes);
 
 mongoose
   .connect(process.env.MONGO_URL)
