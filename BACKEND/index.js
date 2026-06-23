@@ -44,10 +44,8 @@ app.get("/", (req, res) => {
 const roomUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("User Connected:", socket.id);
 
   socket.on("join-room", ({ roomId, username }) => {
-    console.log("JOIN", socket.id, username);
     socket.join(roomId);
     socket.roomId = roomId;
     socket.username = username;
@@ -56,21 +54,17 @@ io.on("connection", (socket) => {
         roomUsers[roomId] = [];
     }
 
-    console.log("BEFORE", roomUsers[roomId]);
 
     roomUsers[roomId].push({
         socketId: socket.id,
         username
     });
 
-    console.log("AFTER", roomUsers[roomId]);
     
     io.to(roomId).emit(
         "active-users",
         roomUsers[roomId]
     );
-
-    console.log(`${socket.id} joined room ${roomId}`);
 
     socket.to(roomId).emit("user-joined", {socketId: socket.id});
   });
@@ -108,8 +102,6 @@ io.on("connection", (socket) => {
               roomUsers[roomId]
           );
       }
-
-      console.log("User Disconnected:", socket.id);
   });
 });
 

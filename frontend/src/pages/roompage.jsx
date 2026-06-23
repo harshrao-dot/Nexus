@@ -56,7 +56,6 @@ function RoomPage() {
 
     useEffect(() => {
         socket.on("active-users", (users) => {
-            console.log("ACTIVE USERS EVENT", users);
             setActiveUsers(users);
         });
 
@@ -67,8 +66,6 @@ function RoomPage() {
 
     useEffect(() => {
         if (!user) return;
-        console.log("socket connected:", socket.connected);
-        console.log("user:", user);
 
         socket.emit("join-room", {
             roomId,
@@ -92,7 +89,7 @@ function RoomPage() {
 
             setFiles(res.data.files);
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 
@@ -150,7 +147,7 @@ function RoomPage() {
 
             fetchFiles();
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 
@@ -170,7 +167,7 @@ function RoomPage() {
                 setSelectedFile(null);
             }
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 
@@ -192,7 +189,7 @@ function RoomPage() {
 
             fetchFiles();
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 
@@ -205,7 +202,7 @@ function RoomPage() {
             setSelectedFile(res.data.file);
             setCode(res.data.file.content);
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 

@@ -34,7 +34,7 @@ export default function Signup() {
 
             navigate("/dashboard");
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     };
 
