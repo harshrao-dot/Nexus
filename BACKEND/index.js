@@ -57,10 +57,16 @@ io.on("connection", (socket) => {
     }
 
 
-    roomUsers[roomId].push({
+    const alreadyExists = roomUsers[roomId].some(
+      (u) => u.socketId === socket.id
+    );
+
+    if (!alreadyExists) {
+      roomUsers[roomId].push({
         socketId: socket.id,
-        username
-    });
+        username,
+      });
+    }
 
     
     io.to(roomId).emit(
@@ -85,6 +91,10 @@ io.on("connection", (socket) => {
     }
 
     socket.leave(roomId);
+
+    if (socket.roomId === roomId) {
+      delete socket.roomId;
+    }
   });
 
   socket.on("code-change", ({ roomId, fileId, code }) => {
@@ -98,6 +108,10 @@ io.on("connection", (socket) => {
 
   });
 
+  socket.on("language-change", ({ roomId, language }) => {
+    socket.to(roomId).emit("language-update", language);
+  });
+
   socket.on("get-file-state", (fileId, callback) => {
     callback(
         fileStates[fileId] || null
@@ -106,18 +120,27 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-      const roomId = socket.roomId;
+    const roomId = socket.roomId;
 
-      if (roomId && roomUsers[roomId]) {
-          roomUsers[roomId] = roomUsers[roomId].filter(
-              (user) => user.socketId !== socket.id
-          );
+    if (!roomId || !roomUsers[roomId]) return;
 
-          io.to(roomId).emit(
-              "active-users",
-              roomUsers[roomId]
-          );
-      }
+    roomUsers[roomId] = roomUsers[roomId].filter(
+      (u) => u.socketId !== socket.id
+    );
+
+    io.to(roomId).emit("active-users", roomUsers[roomId]);
+
+    if (roomUsers[roomId] && roomUsers[roomId].length === 0) {
+      delete roomUsers[roomId];
+    }
+  });
+
+  socket.on("question-selected", ({ roomId }) => {
+      io.to(roomId).emit("question-updated");
+  });
+
+  socket.on("files-updated", (roomId) => {
+    io.to(roomId).emit("files-updated");
   });
 });
 

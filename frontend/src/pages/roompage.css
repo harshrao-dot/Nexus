@@ -11,6 +11,11 @@
     height: 100vh;
 }
 
+.file-explorer select {
+    width: 180px;
+    margin-bottom: 16px;
+}
+
 .editor-section{
     flex: 1;
     padding: 10px;
@@ -51,4 +56,22 @@
     width: 5px;
     cursor: col-resize;
     background: #333;
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.question-meta {
+    margin-bottom: 12px;
 }
