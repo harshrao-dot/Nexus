@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 import Editor from "@monaco-editor/react";
+import socket from "../socket";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import "./roompage.css";
 
 
@@ -16,7 +19,10 @@ function RoomPage() {
     const [language, setLanguage] = useState("javascript");
     const [isResizing, setIsResizing] = useState(false);
     const [code, setCode] = useState("");
+    const [activeUsers, setActiveUsers] = useState([]);
     const { roomId } = useParams();
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -47,6 +53,38 @@ function RoomPage() {
             window.removeEventListener("mouseup", handleMouseUp);
         };
     }, [isResizing]);
+
+    useEffect(() => {
+        socket.on("active-users", (users) => {
+            console.log("ACTIVE USERS EVENT", users);
+            setActiveUsers(users);
+        });
+
+        return () => {
+            socket.off("active-users");
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!user) return;
+        console.log("socket connected:", socket.connected);
+        console.log("user:", user);
+
+        socket.emit("join-room", {
+            roomId,
+            username: user.username
+        });
+    }, [roomId, user]);
+
+    useEffect(() => {
+        socket.on("code-update", (code) => {
+            setCode(code);
+        });
+        
+        return () => {
+            socket.off("code-update");
+        };
+    }, []);
 
     const fetchFiles = async () => {
         try {
@@ -171,6 +209,22 @@ function RoomPage() {
         }
     };
 
+    const handleCodeChange = (value) => {
+        const newCode = value || "";
+
+        setCode(newCode);
+
+        socket.emit("code-change", {
+            roomId,
+            code: newCode
+        });
+    };
+
+    const leaveRoom = () => {
+        socket.emit("leave-room", roomId);
+        navigate("/dashboard");
+    };
+
     return (
         <div className="room-page">
     
@@ -238,10 +292,13 @@ function RoomPage() {
                 ))}
 
                 <div className="members-section">
-                    <h4>Members</h4>
+                    <h4>Active Users ({activeUsers.length})</h4>
 
-                    <div>Harsh</div>
-                    <div>User2</div>
+                    {activeUsers.map((user) => (
+                        <div key={user.socketId}>
+                            {user.username}
+                        </div>
+                    ))}
                 </div>
             </div>)}
 
@@ -254,6 +311,9 @@ function RoomPage() {
             
 
            <div className="editor-section">
+            <button onClick={leaveRoom}>
+                Leave Room
+            </button>
                 <button onClick={() => setShowExplorer(!showExplorer)}>
                     {showExplorer ? "←" : "→"}
                 </button>
@@ -267,7 +327,7 @@ function RoomPage() {
                             height="90vh"
                             language={selectedFile.language}
                             value={code}
-                            onChange={(value) => setCode(value || "")}
+                            onChange={handleCodeChange}
                         />
                     </>
                 ) : (

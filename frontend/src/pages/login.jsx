@@ -29,7 +29,10 @@ export default function Login() {
                 formData
             );
 
-            login(response.data.token);
+            login(
+                response.data.token,
+                response.data.user
+            );
 
             navigate("/dashboard");
         } catch (err) {

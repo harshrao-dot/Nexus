@@ -3,12 +3,14 @@ import api from "../services/api";
 import Navbar from "../components/navbar";
 import CreateRoomForm from "../components/createRoomForm";
 import JoinRoomForm from "../components/joinRoomForm";
+import { useNavigate } from "react-router-dom";
 import "./dashboard.css";
 
 export default function Dashboard() {
     const [rooms, setRooms] = useState([]);
     const [showCreateRoom, setShowCreateRoom] = useState(false);
     const [showJoinRoom, setShowJoinRoom] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchRooms();
@@ -93,7 +95,11 @@ export default function Dashboard() {
                                 Members: {room.members.length}/{room.maxUsers}
                             </p>
 
-                            <button>Open Room</button>
+                            <button
+                                onClick={() => navigate(`/room/${room._id}`)}
+                            >
+                                Open Room
+                            </button>
                         </div>
                     ))}
                 </div>

@@ -1,6 +1,5 @@
 require("dotenv").config();
 
-
 const express = require("express");
 const mongoose = require("mongoose");
 const http = require("http");
@@ -42,27 +41,75 @@ app.get("/", (req, res) => {
   res.send("Server running");
 });
 
+const roomUsers = {};
+
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
 
-  socket.on("join-room", (roomId) => {
+  socket.on("join-room", ({ roomId, username }) => {
+    console.log("JOIN", socket.id, username);
     socket.join(roomId);
+    socket.roomId = roomId;
+    socket.username = username;
+
+    if (!roomUsers[roomId]) {
+        roomUsers[roomId] = [];
+    }
+
+    console.log("BEFORE", roomUsers[roomId]);
+
+    roomUsers[roomId].push({
+        socketId: socket.id,
+        username
+    });
+
+    console.log("AFTER", roomUsers[roomId]);
+    
+    io.to(roomId).emit(
+        "active-users",
+        roomUsers[roomId]
+    );
 
     console.log(`${socket.id} joined room ${roomId}`);
 
     socket.to(roomId).emit("user-joined", {socketId: socket.id});
   });
 
+  socket.on("leave-room", (roomId) => {
+    if (roomUsers[roomId]) {
+        roomUsers[roomId] = roomUsers[roomId].filter(
+            (user) => user.socketId !== socket.id
+        );
+
+        if (roomUsers[roomId].length === 0) {
+            delete roomUsers[roomId];
+        }
+
+        io.to(roomId).emit("active-users", roomUsers[roomId] || []);
+    }
+
+    socket.leave(roomId);
+  });
+
   socket.on("code-change", ({ roomId, code }) => {
     socket.to(roomId).emit("code-update", code);
   });
 
-  socket.on("file-change", ({ roomId, fileId }) => {
-    socket.to(roomId).emit("file-updated", fileId);
-  });
-
   socket.on("disconnect", () => {
-    console.log("User Disconnected:", socket.id);
+      const roomId = socket.roomId;
+
+      if (roomId && roomUsers[roomId]) {
+          roomUsers[roomId] = roomUsers[roomId].filter(
+              (user) => user.socketId !== socket.id
+          );
+
+          io.to(roomId).emit(
+              "active-users",
+              roomUsers[roomId]
+          );
+      }
+
+      console.log("User Disconnected:", socket.id);
   });
 });
 
