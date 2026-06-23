@@ -56,14 +56,23 @@ function InterviewRoomPage() {
     }, []);
 
     useEffect(() => {
+        socket.on("files-updated", fetchFiles);
+
+        return () => {
+            socket.off("files-updated", fetchFiles);
+        };
+    }, []);
+
+    useEffect(() => {
         if (!user) return;
         socket.emit("join-room", { roomId, username: user.username });
     }, [roomId, user]);
 
     useEffect(() => {
         const handleCodeUpdate = ({ fileId, code }) => {
+
             if (selectedFile && selectedFile._id === fileId) {
-                setCode(code);
+                setCode(code);console.log("incoming fileId:", fileId);
             }
         };
 
@@ -85,13 +94,14 @@ function InterviewRoomPage() {
 
     const fetchFiles = async () => {
         try {
+
             const res = await api.get(`/files/${roomId}`);
-            // If files exist, directly open the first file to trigger state sync
+
             if (res.data.files && res.data.files.length > 0) {
                 openFile(res.data.files[0]._id);
             }
         } catch (err) {
-            console.error(err);
+            console.log("fetchFiles error:", err);
         }
     };
 
@@ -131,8 +141,23 @@ function InterviewRoomPage() {
 
     const selectQuestion = async (questionId) => {
         try {
-            await api.put("/questions/select-question", { roomId, questionId });
+            await api.put("/questions/select-question", {
+                roomId,
+                questionId
+            });
+
+            const fileRes = await api.post("/files/create", {
+                roomId,
+                name: "solution.js",
+                language: interviewLanguage
+            });
+
+            setSelectedFile(fileRes.data.file);
+            setCode(fileRes.data.file.content || "");
+
+            socket.emit("files-updated", roomId);
             socket.emit("question-selected", { roomId });
+
             fetchQuestion();
             setShowQuestionLibrary(false);
         } catch (err) {
@@ -143,7 +168,7 @@ function InterviewRoomPage() {
     const handleCodeChange = (value) => {
         const newCode = value || "";
         setCode(newCode);
-        
+
         if (selectedFile) {
             socket.emit("code-change", {
                 roomId,
