@@ -10,6 +10,9 @@ export default function QuestionLibrary() {
         difficulty: "Easy",
         constraints: "",
         tags: "",
+        examples: "",
+        visibleTestCases: "",
+        hiddenTestCases: "",
     });
 
     const [editingId, setEditingId] = useState(null);
@@ -39,7 +42,12 @@ export default function QuestionLibrary() {
                 tags: form.tags
                     .split(",")
                     .map((t) => t.trim()),
+
+                examples: JSON.parse(form.examples || "[]"),
+                visibleTestCases: JSON.parse(form.visibleTestCases || "[]"),
+                hiddenTestCases: JSON.parse(form.hiddenTestCases || "[]"),
             };
+            console.log(payload);
 
             if (editingId) {
                 await api.put(`/questions/${editingId}`, payload);
@@ -53,11 +61,16 @@ export default function QuestionLibrary() {
                 difficulty: "Easy",
                 constraints: "",
                 tags: "",
+                examples: "",
+                visibleTestCases: "",
+                hiddenTestCases: "",
             });
 
             setEditingId(null);
             fetchQuestions();
         } catch (err) {
+            console.log(err.response?.data);
+            console.log(err.response?.data?.message);
             console.error(err);
         }
     };
@@ -71,6 +84,9 @@ export default function QuestionLibrary() {
             difficulty: question.difficulty,
             constraints: question.constraints?.join("\n") || "",
             tags: question.tags?.join(",") || "",
+            examples: JSON.stringify(question.examples || [], null, 2),
+            visibleTestCases: JSON.stringify(question.visibleTestCases || [], null, 2),
+            hiddenTestCases: JSON.stringify(question.hiddenTestCases || [], null, 2),
         });
     };
 
@@ -139,6 +155,40 @@ export default function QuestionLibrary() {
             />
 
             <br /><br />
+
+            <textarea
+                placeholder="Examples"
+                value={form.examples}
+                onChange={(e) =>
+                    setForm({ ...form, examples: e.target.value })
+                }
+            />
+
+            <br /><br />
+
+            <textarea
+                placeholder="Visible Test Cases"
+                value={form.visibleTestCases}
+                onChange={(e) =>
+                    setForm({
+                        ...form,
+                        visibleTestCases: e.target.value,
+                    })
+                }
+            />
+
+            <br /><br />
+
+            <textarea
+                placeholder="Hidden Test Cases"
+                value={form.hiddenTestCases}
+                onChange={(e) =>
+                    setForm({
+                        ...form,
+                        hiddenTestCases: e.target.value,
+                    })
+                }
+            />
 
             <button onClick={handleSubmit}>
                 {editingId ? "Update" : "Add Question"}

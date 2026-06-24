@@ -95,6 +95,10 @@
     flex-direction: column;
 }
 
+.execution-panel h4 {
+    margin: 0 0 6px 0;
+}
+
 .execution-panel textarea {
     flex: 1;
     width: 100%;

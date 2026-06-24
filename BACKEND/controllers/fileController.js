@@ -3,7 +3,7 @@ const Room = require("../models/room");
 
 const createFile = async (req, res) => {
     try {
-        const { roomId, name, language } = req.body;
+        const { roomId, name, language, content } = req.body;
 
         const room = await Room.findById(roomId);
 
@@ -17,6 +17,7 @@ const createFile = async (req, res) => {
         const file = await File.create({
             name,
             language,
+            content,
             room: roomId,
             createdBy: req.userId
         });

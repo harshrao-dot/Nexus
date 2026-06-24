@@ -38,12 +38,37 @@ exports.runCode = async (req, res) => {
       }
     );
 
-    return res.status(200).json({
-      success: true,
-      output: response.data.output,
-      cpuTime: response.data.cpuTime,
-      memory: response.data.memory,
+    const output = response.data.output || "";
+
+    if (
+    output.includes("SyntaxError") ||
+    output.includes("Compilation failed") ||
+    output.includes("error:")
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: `Compilation Error\n\n${output}`,
     });
+  }
+
+  if (
+    output.includes("Exception") ||
+    output.includes("ReferenceError") ||
+    output.includes("TypeError") ||
+    output.includes("Runtime Error")
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: `Runtime Error\n\n${output}`,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    output,
+    cpuTime: response.data.cpuTime,
+    memory: response.data.memory,
+  });
 
   } catch (err) {
     console.log(err.response?.data || err.message);

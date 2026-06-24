@@ -23,12 +23,12 @@ const questionSchema = new Schema(
             {
                 input: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
 
                 output: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
 
                 explanation: {
@@ -42,12 +42,12 @@ const questionSchema = new Schema(
             {
                 input: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
 
                 output: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
             },
         ],
@@ -56,12 +56,12 @@ const questionSchema = new Schema(
             {
                 input: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
 
                 output: {
                     type: String,
-                    required: true,
+                    default: "",
                 },
             },
         ],

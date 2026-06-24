@@ -7,6 +7,17 @@ import { useAuth } from "../context/AuthContext";
 import "./roompage.css";
 
 function InterviewRoomPage() {
+    
+    const languageTemplates = {
+        javascript: 'const input = require("fs").readFileSync(0, "utf8").trim();\n\n// Write your code here',
+
+        python: 'import sys\n\ninput_data = sys.stdin.read().strip()\n\n# Write your code here',
+
+        java: 'import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n\n        // Write your code here\n    }\n}',
+
+        cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n\n    // Write your code here\n\n    return 0;\n}',
+    };
+
     const [sidebarWidth, setSidebarWidth] = useState(300);
     const [isResizing, setIsResizing] = useState(false);
     const [code, setCode] = useState("");
@@ -22,7 +33,6 @@ function InterviewRoomPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const [stdin, setStdin] = useState("");
     const [output, setOutput] = useState("");
     const [running, setRunning] = useState(false);
     const [consoleHeight, setConsoleHeight] = useState(180);
@@ -126,6 +136,16 @@ function InterviewRoomPage() {
         };
     }, []);
 
+    useEffect(() => {
+        socket.on("execution-result", (output) => {
+            setOutput(output);
+        });
+
+        return () => {
+            socket.off("execution-result");
+        };
+    }, []);
+
     const fetchFiles = async () => {
         try {
 
@@ -143,7 +163,7 @@ function InterviewRoomPage() {
         try {
             const res = await api.get(`/files/single/${fileId}`);
             setSelectedFile(res.data.file);
-            setCode(res.data.file.content);
+            setCode(res.data.file.content || languageTemplates[interviewLanguage]);
 
             socket.emit("get-file-state", fileId, (latestCode) => {
                 if (latestCode !== null) {
@@ -182,12 +202,13 @@ function InterviewRoomPage() {
 
             const fileRes = await api.post("/files/create", {
                 roomId,
-                name: "solution.js",
-                language: interviewLanguage
+                name: `solution-${questionId}.js`,
+                language: interviewLanguage,
+                content: languageTemplates[interviewLanguage]
             });
 
             setSelectedFile(fileRes.data.file);
-            setCode(fileRes.data.file.content || "");
+            setCode(fileRes.data.file.content);
 
             socket.emit("files-updated", roomId);
             socket.emit("question-selected", { roomId });
@@ -222,13 +243,122 @@ function InterviewRoomPage() {
             setRunning(true);
             setOutput("");
 
-            const res = await api.post("/code/run", {
-                source_code: code,
-                language: interviewLanguage,
-                stdin,
+            let passedCount = 0;
+            let failedCase = null;
+            const results = [];
+
+            for (let i = 0; i < question.visibleTestCases.length; i++) {
+                const testCase = question.visibleTestCases[i];
+
+                const res = await api.post("/code/run", {
+                    source_code: code,
+                    language: interviewLanguage,
+                    stdin: testCase.input,
+                });
+
+                const actual = (res.data.output || "").trim();
+                const expected = testCase.output.trim();
+
+                const passed = actual === expected;
+
+                if (passed) {
+                    passedCount++;
+                } else if (!failedCase) {
+                    failedCase = {
+                        index: i + 1,
+                        input: testCase.input,
+                        expected,
+                        actual,
+                    };
+                }
+
+                results.push(
+                    `${passed ? "✓" : "✗"} Test Case ${i + 1}`
+                );
+            }
+
+            let outputText = results.join("\n");
+
+            if (failedCase) {
+                outputText += `
+
+                Failed Test Case: ${failedCase.index}
+
+                Input: ${failedCase.input}
+
+                Expected: ${failedCase.expected}
+
+                Got: ${failedCase.actual}`;
+            }
+
+            outputText += `\n\nPassed ${passedCount}/${question.visibleTestCases.length}`;
+
+            setOutput(outputText);
+
+            socket.emit("execution-result", {
+                roomId,
+                output: outputText,
             });
 
-            setOutput(res.data.output);
+        } catch (err) {
+            setOutput(
+                err.response?.data?.message ||
+                "Execution failed"
+            );
+        } finally {
+            setRunning(false);
+        }
+    };
+
+    const submitCode = async () => {
+        try {
+            setRunning(true);
+            setOutput("");
+
+            const allTestCases = [
+                ...(question.visibleTestCases || []),
+                ...(question.hiddenTestCases || []),
+            ];
+
+            let passedCount = 0;
+
+            for (const testCase of allTestCases) {
+                const res = await api.post("/code/run", {
+                    source_code: code,
+                    language: interviewLanguage,
+                    stdin: testCase.input,
+                });
+
+                const actual = (res.data.output || "").trim();
+                const expected = (testCase.output || "").trim();
+
+                if (actual === expected) {
+                    passedCount++;
+                }
+            }
+
+            
+            if (passedCount === allTestCases.length) {
+                const outputText =
+                    `Accepted ✅\n\nPassed ${passedCount}/${allTestCases.length}`;
+
+                setOutput(outputText);
+
+                socket.emit("execution-result", {
+                    roomId,
+                    output: outputText,
+                });
+            } else {
+                const outputText =
+                    `Wrong Answer ❌\n\nPassed ${passedCount}/${allTestCases.length}`;
+
+                setOutput(outputText);
+
+                socket.emit("execution-result", {
+                    roomId,
+                    output: outputText,
+                });
+            }
         } catch (err) {
             setOutput(
                 err.response?.data?.message ||
@@ -300,6 +430,8 @@ function InterviewRoomPage() {
 
                             setInterviewLanguage(language);
 
+                            setCode(languageTemplates[language]);
+
                             socket.emit("language-change", {
                                 roomId,
                                 language
@@ -313,6 +445,9 @@ function InterviewRoomPage() {
                     </select>
                     <button onClick={runCode} disabled={running}>
                         {running ? "Running..." : "Run"}
+                    </button>
+                    <button onClick={submitCode} disabled={running}>
+                        Submit
                     </button>
                 </div>
                 
@@ -341,16 +476,6 @@ function InterviewRoomPage() {
 
                 {showConsole && (
                     <div className="execution-panel" style={{ height: `${consoleHeight}px` }}>
-                        <div>
-                            <h4>Input</h4>
-                            <textarea
-                                value={stdin}
-                                onChange={(e) => setStdin(e.target.value)}
-                                placeholder="Enter input..."
-                                rows={5}
-                            />
-                        </div>
-
                         <div>
                             <h4>Output</h4>
                             <pre>{output}</pre>

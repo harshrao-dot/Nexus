@@ -110,8 +110,8 @@ io.on("connection", (socket) => {
 
   });
 
-  socket.on("language-change", ({ roomId, language }) => {
-    socket.to(roomId).emit("language-update", language);
+  socket.on("language-change", ({ roomId, language,}) => {
+    socket.to(roomId).emit("language-update", language,);
   });
 
   socket.on("get-file-state", (fileId, callback) => {
@@ -143,6 +143,10 @@ io.on("connection", (socket) => {
 
   socket.on("files-updated", (roomId) => {
     io.to(roomId).emit("files-updated");
+  });
+
+  socket.on("execution-result", ({ roomId, output }) => {
+    io.to(roomId).emit("execution-result", output);
   });
 });
 
