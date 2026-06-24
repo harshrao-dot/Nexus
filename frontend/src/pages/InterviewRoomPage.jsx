@@ -22,6 +22,13 @@ function InterviewRoomPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
+    const [stdin, setStdin] = useState("");
+    const [output, setOutput] = useState("");
+    const [running, setRunning] = useState(false);
+    const [consoleHeight, setConsoleHeight] = useState(180);
+    const [isConsoleResizing, setIsConsoleResizing] = useState(false);
+    const [showConsole, setShowConsole] = useState(true);
+
     useEffect(() => {
         fetchFiles();
         fetchQuestion();
@@ -42,6 +49,33 @@ function InterviewRoomPage() {
             window.removeEventListener("mouseup", handleMouseUp);
         };
     }, [isResizing]);
+
+    useEffect(() => {
+
+        if (isConsoleResizing) {
+            document.body.style.userSelect = "none";
+        } else {
+            document.body.style.userSelect = "";
+        }
+
+        const handleMouseMove = (e) => {
+            if (!isConsoleResizing) return;
+
+            const newHeight = window.innerHeight - e.clientY - 40;
+
+            setConsoleHeight(Math.min(Math.max(newHeight, 100), 400));
+        };
+
+        const handleMouseUp = () => setIsConsoleResizing(false);
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isConsoleResizing]);
 
     useEffect(() => {
         socket.on("active-users", (users) => setActiveUsers(users));
@@ -183,6 +217,28 @@ function InterviewRoomPage() {
         navigate("/dashboard");
     };
 
+    const runCode = async () => {
+        try {
+            setRunning(true);
+            setOutput("");
+
+            const res = await api.post("/code/run", {
+                source_code: code,
+                language: interviewLanguage,
+                stdin,
+            });
+
+            setOutput(res.data.output);
+        } catch (err) {
+            setOutput(
+                err.response?.data?.message ||
+                "Execution failed"
+            );
+        } finally {
+            setRunning(false);
+        }
+    };
+
     return (
         <div className="room-page">
             <div className="file-explorer" style={{ width: `${sidebarWidth}px` }}>
@@ -255,14 +311,52 @@ function InterviewRoomPage() {
                         <option value="java">Java</option>
                         <option value="python">Python</option>
                     </select>
+                    <button onClick={runCode} disabled={running}>
+                        {running ? "Running..." : "Run"}
+                    </button>
                 </div>
                 
-                <Editor
-                    height="90vh"
-                    language={interviewLanguage}
-                    value={code}
-                    onChange={handleCodeChange}
+                <div style={{ flex: 1, minHeight: 0 }}>
+                    <Editor
+                        height="100%"
+                        language={interviewLanguage}
+                        value={code}
+                        onChange={handleCodeChange}
+                        options={{
+                            automaticLayout: true,
+                        }}
+                    />
+                </div>
+
+                <div
+                    className="console-resize-handle"
+                    onMouseDown={() => setIsConsoleResizing(true)}
                 />
+
+                <div className="console-header">
+                    <button onClick={() => setShowConsole(!showConsole)}>
+                        {showConsole ? "▼" : "▲"}
+                    </button>
+                </div>
+
+                {showConsole && (
+                    <div className="execution-panel" style={{ height: `${consoleHeight}px` }}>
+                        <div>
+                            <h4>Input</h4>
+                            <textarea
+                                value={stdin}
+                                onChange={(e) => setStdin(e.target.value)}
+                                placeholder="Enter input..."
+                                rows={5}
+                            />
+                        </div>
+
+                        <div>
+                            <h4>Output</h4>
+                            <pre>{output}</pre>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {showQuestionLibrary && (

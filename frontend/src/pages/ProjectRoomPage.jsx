@@ -23,6 +23,12 @@ function ProjectRoomPage() {
     const { roomId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [stdin, setStdin] = useState("");
+    const [output, setOutput] = useState("");
+    const [running, setRunning] = useState(false);
+    const [showBottomPanel, setShowBottomPanel] = useState(true);
+    const [bottomPanelHeight, setBottomPanelHeight] = useState(180);
+    const [isBottomPanelResizing, setIsBottomPanelResizing] = useState(false);
 
 
     useEffect(() => {
@@ -53,6 +59,31 @@ function ProjectRoomPage() {
             window.removeEventListener("mouseup", handleMouseUp);
         };
     }, [isResizing]);
+
+    useEffect(() => {
+
+        if (isBottomPanelResizing) {
+            document.body.style.userSelect = "none";
+        } else {
+            document.body.style.userSelect = "";
+        }
+
+        const handleMouseMove = (e) => {
+            if (!isBottomPanelResizing) return;
+            const newHeight = window.innerHeight - e.clientY - 40;
+            setBottomPanelHeight(Math.min(Math.max(newHeight, 100), 400));
+        };
+
+        const handleMouseUp = () => setIsBottomPanelResizing(false);
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isBottomPanelResizing]);
 
     useEffect(() => {
         socket.on("active-users", (users) => {
@@ -266,6 +297,28 @@ function ProjectRoomPage() {
         navigate("/dashboard");
     };
 
+    const runCode = async () => {
+        try {
+            setRunning(true);
+            setOutput("");
+
+            const res = await api.post("/code/run", {
+                source_code: code,
+                language: language,
+                stdin,
+            });
+
+            setOutput(res.data.output);
+        } catch (err) {
+            setOutput(
+                err.response?.data?.message ||
+                "Execution failed"
+            );
+        } finally {
+            setRunning(false);
+        }
+    };
+
     return (
         <div className="room-page">
 
@@ -364,14 +417,50 @@ function ProjectRoomPage() {
                             <button onClick={saveFile}>
                                 Save
                             </button>
+                            <button onClick={runCode} disabled={running}>
+                                {running ? "Running..." : "Run"}
+                            </button>
                         </div>
 
-                        <Editor
-                            height="90vh"
-                            language={selectedFile.language}
-                            value={code}
-                            onChange={handleCodeChange}
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                            <Editor
+                                height="100%"
+                                language={selectedFile.language}
+                                value={code}
+                                onChange={handleCodeChange}
+                                options={{ automaticLayout: true }}
+                            />
+                        </div>
+
+                        <div
+                            className="console-resize-handle"
+                            onMouseDown={() => setIsBottomPanelResizing(true)}
                         />
+
+                        <div className="console-header">
+                            <button onClick={() => setShowBottomPanel(!showBottomPanel)}>
+                                {showBottomPanel ? "▼" : "▲"}
+                            </button>
+                        </div>
+
+                        {showBottomPanel && (
+                            <div className="execution-panel" style={{ height: `${bottomPanelHeight}px` }}>
+                                <div>
+                                    <h4>Input</h4>
+                                    <textarea
+                                        value={stdin}
+                                        onChange={(e) => setStdin(e.target.value)}
+                                        placeholder="Enter input..."
+                                        rows={5}
+                                    />
+                                </div>
+
+                                <div>
+                                    <h4>Output</h4>
+                                    <pre>{output}</pre>
+                                </div>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <h2>Select a file</h2>
