@@ -67,6 +67,13 @@ export default function Dashboard() {
                 >
                     Join Room
                 </div>
+
+                <div
+                    className="action-card"
+                    onClick={() => navigate("/questions")}
+                >
+                    Question Library
+                </div>
             </div>
 
             {showCreateRoom && (

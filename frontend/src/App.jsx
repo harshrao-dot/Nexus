@@ -5,6 +5,7 @@ import Dashboard from "./pages/dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import RoomPage from "./pages/roompage";  
+import QuestionLibrary from "./pages/questionLibrary";
 
 
 function App() {
@@ -40,6 +41,13 @@ function App() {
               <RoomPage />
           </ProtectedRoute>
         } 
+      />
+
+      <Route path="/questions" element={
+          <ProtectedRoute>
+              <QuestionLibrary />
+          </ProtectedRoute>
+        }
       />
     </Routes>
     </>
