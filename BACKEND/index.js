@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const fileRoutes = require("./routes/fileRoutes");
 const questionRoutes = require("./routes/questionRoutes");
+const codeRoutes = require("./routes/codeRoutes");
 
 const app = express();
 const PORT = 5000;
@@ -29,6 +30,7 @@ app.use("/auth", authRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/files", fileRoutes);
 app.use("/questions", questionRoutes);
+app.use("/code", codeRoutes);
 
 mongoose
   .connect(process.env.MONGO_URL)
