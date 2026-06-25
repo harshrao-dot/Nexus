@@ -6,12 +6,16 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import RoomPage from "./pages/roompage";  
 import QuestionLibrary from "./pages/questionLibrary";
+import { Navigate } from "react-router-dom";
 
 
 function App() {
   return(
     <>
     <Routes>
+
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
       <Route
         path="/login"
         element={
