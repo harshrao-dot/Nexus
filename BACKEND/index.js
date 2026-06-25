@@ -13,17 +13,24 @@ const questionRoutes = require("./routes/questionRoutes");
 const codeRoutes = require("./routes/codeRoutes");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
+    credentials: true,
   },
 });
 
-app.use(cors());
+app.use(cors({origin: allowedOrigins, credentials: true,}));
+
 app.use(express.json());
 
 app.use("/auth", authRoutes);
